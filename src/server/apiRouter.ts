@@ -84,7 +84,7 @@ apiRouter.post('/orders', (req, res) => {
       total,
       status: 'Order Placed',
       estimatedDeliveryDate: formattedDate,
-      courierName: 'TCS / Leopards Courier Pakistan'
+      courierName: 'TCS / PostEx Courier Pakistan'
     };
 
     orderStore.unshift(newOrder);
@@ -192,7 +192,7 @@ Key details to reference naturally:
 - 100% Genuine Full-Grain Leather
 - Free custom initial hot-foil embossing (Gold/Silver)
 - Free Gift Box Packaging
-- Nationwide Cash on Delivery (COD) across Pakistan (Karachi, Lahore, Islamabad, etc., delivered in 2-3 days via TCS/Leopards)
+- Nationwide Cash on Delivery (COD) across Pakistan (Karachi, Lahore, Islamabad, etc., delivered in 2-3 days via TCS/PostEx)
 Keep response concise, elegant, and directly address their gifting or wallet selection question.`;
 
     const response = await ai.models.generateContent({

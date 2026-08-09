@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CartItem } from '../types';
-import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck, Tag, Gift } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck, Tag, Gift, MessageCircle } from 'lucide-react';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -206,15 +206,32 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
             </div>
 
-            {/* Checkout Action Button */}
-            <button
-              id="proceed-checkout-btn"
-              onClick={() => onProceedToCheckout(promoDiscount)}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-zinc-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-amber-950 border border-amber-300 transition-transform active:scale-95"
-            >
-              <span>Proceed to Cash on Delivery</span>
-              <ArrowRight className="w-4 h-4 text-zinc-950" />
-            </button>
+            {/* Checkout Action Buttons */}
+            <div className="space-y-2">
+              <button
+                id="proceed-checkout-btn"
+                onClick={() => onProceedToCheckout(promoDiscount)}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-zinc-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-amber-950 border border-amber-300 transition-transform active:scale-95"
+              >
+                <span>Proceed to Cash on Delivery</span>
+                <ArrowRight className="w-4 h-4 text-zinc-950" />
+              </button>
+
+              <a
+                id="cart-whatsapp-checkout-btn"
+                href={`https://wa.me/923137777344?text=${encodeURIComponent(
+                  `Assalam o Alaikum LeatherCraft PK!\nI want to place my order directly via WhatsApp:\n\n` +
+                  items.map((item, idx) => `${idx + 1}. *${item.product.name}* (${item.selectedColor.name}) x${item.quantity} - Rs. ${(item.product.price * item.quantity).toLocaleString('en-PK')}`).join('\n') +
+                  `\n\n💰 *Total Amount:* Rs. ${finalTotal.toLocaleString('en-PK')}\n🚚 *Payment:* Cash on Delivery\n\nPlease confirm my order!`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-zinc-950 font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md border border-emerald-400 transition-all active:scale-95 font-sans"
+              >
+                <MessageCircle className="w-4 h-4 fill-zinc-950 text-[#25D366]" />
+                <span>Order Direct on WhatsApp</span>
+              </a>
+            </div>
           </div>
         )}
       </div>

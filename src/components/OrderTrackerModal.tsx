@@ -84,7 +84,7 @@ export const OrderTrackerModal: React.FC<OrderTrackerModalProps> = ({ isOpen, on
   const steps = [
     'Order Placed',
     'Leather Quality Check & Monogram Stamping',
-    'Dispatched via TCS / Leopards Courier',
+    'Dispatched via TCS / PostEx Courier',
     'Out for Delivery in City',
     'Delivered'
   ];

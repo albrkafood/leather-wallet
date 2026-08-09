@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { WalletProduct } from '../types';
-import { Star, ShieldCheck, Sparkles, ShoppingBag, Eye, Check } from 'lucide-react';
+import { Star, ShieldCheck, Sparkles, ShoppingBag, Eye, Check, Zap } from 'lucide-react';
 
 interface ProductCardProps {
   product: WalletProduct;
@@ -109,7 +109,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Features highlight */}
           <div className="flex items-center gap-2 text-[11px] text-amber-300/80 mt-2">
             <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
-            <span>Free 24K Gold Initials Stamping</span>
+            <span>100% Genuine Full-Grain Leather</span>
           </div>
         </div>
 
@@ -142,42 +142,51 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </span>
         </div>
 
-        {/* Pricing & Add to Cart Footer */}
-        <div className="pt-2 flex items-center justify-between gap-2">
+        {/* Pricing & Action Buttons Footer */}
+        <div className="pt-2 flex items-center justify-between gap-1.5">
           <div className="flex flex-col">
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-serif font-extrabold text-xl text-amber-300">
+            <div className="flex items-baseline gap-1">
+              <span className="font-serif font-extrabold text-base sm:text-lg text-amber-300">
                 Rs. {product.price.toLocaleString('en-PK')}
               </span>
             </div>
             {product.originalPrice > product.price && (
-              <span className="text-xs text-zinc-500 line-through">
+              <span className="text-[10px] text-zinc-500 line-through">
                 Rs. {product.originalPrice.toLocaleString('en-PK')}
               </span>
             )}
           </div>
 
-          <button
-            id={`add-to-cart-${product.id}`}
-            onClick={handleAddToCart}
-            className={`px-3.5 py-2 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all shadow-md ${
-              isAdded
-                ? 'bg-emerald-600 text-white'
-                : 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-zinc-950'
-            }`}
-          >
-            {isAdded ? (
-              <>
-                <Check className="w-3.5 h-3.5" />
-                <span>Added</span>
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="w-3.5 h-3.5" />
-                <span>Buy COD</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              id={`add-to-cart-${product.id}`}
+              onClick={handleAddToCart}
+              title="Add to Shopping Bag"
+              className={`p-2.5 rounded-lg font-bold text-xs flex items-center justify-center transition-all shadow-md ${
+                isAdded
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-zinc-800 hover:bg-zinc-700 text-amber-200 border border-amber-800/60'
+              }`}
+            >
+              {isAdded ? (
+                <Check className="w-4 h-4 text-white" />
+              ) : (
+                <ShoppingBag className="w-4 h-4 text-amber-400" />
+              )}
+            </button>
+
+            <button
+              id={`buy-now-${product.id}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onQuickView(product);
+              }}
+              className="px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all shadow-md bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-zinc-950 border border-amber-300"
+            >
+              <Zap className="w-3.5 h-3.5 fill-zinc-950 text-zinc-950" />
+              <span>Buy Now</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

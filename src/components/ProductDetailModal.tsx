@@ -10,9 +10,11 @@ import {
   Star, 
   ShoppingBag, 
   MessageSquare,
+  MessageCircle,
   ThumbsUp,
   UserCheck,
-  PlusCircle
+  PlusCircle,
+  Zap
 } from 'lucide-react';
 
 interface ProductDetailModalProps {
@@ -25,12 +27,20 @@ interface ProductDetailModalProps {
     foilType?: any,
     isGiftWrapped?: boolean
   ) => void;
+  onBuyNow?: (
+    product: WalletProduct,
+    selectedColor: { name: string; hex: string; image: string },
+    customInitials?: string,
+    foilType?: any,
+    isGiftWrapped?: boolean
+  ) => void;
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   product,
   onClose,
-  onAddToCart
+  onAddToCart,
+  onBuyNow
 }) => {
   if (!product) return null;
 
@@ -41,13 +51,16 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const [activeTab, setActiveTab] = useState<'features' | 'specs' | 'reviews' | 'packaging'>('reviews');
   const [addedSuccess, setAddedSuccess] = useState(false);
 
-  // Filter reviews matching current product, fallback to related reviews
-  const matchingReviews = CUSTOMER_REVIEWS.filter(
+  // Sort reviews: specific product reviews first, then all other store reviews
+  const specificReviews = CUSTOMER_REVIEWS.filter(
     (r) => r.productId === product.id || r.productName === product.name
   );
-  const productReviews = matchingReviews.length > 0 ? matchingReviews : CUSTOMER_REVIEWS;
+  const otherReviews = CUSTOMER_REVIEWS.filter(
+    (r) => r.productId !== product.id && r.productName !== product.name
+  );
+  const allProductReviews = [...specificReviews, ...otherReviews];
 
-  const [reviewsList, setReviewsList] = useState<CustomerReview[]>(productReviews);
+  const [reviewsList, setReviewsList] = useState<CustomerReview[]>(allProductReviews);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [newAuthor, setNewAuthor] = useState('');
   const [newCity, setNewCity] = useState('Lahore');
@@ -60,9 +73,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const getDeliveryEstimate = (city: string) => {
     const c = city.toLowerCase();
     if (c === 'karachi' || c === 'lahore' || c === 'islamabad' || c === 'rawalpindi') {
-      return { days: '1 - 2 Business Days', courier: 'TCS Express / Leopards COD' };
+      return { days: '1 - 2 Business Days', courier: 'TCS Express / PostEx COD' };
     }
-    return { days: '2 - 3 Business Days', courier: 'M&P / TCS Nationwide COD' };
+    return { days: '2 - 3 Business Days', courier: 'PostEx / TCS Nationwide COD' };
   };
 
   const deliveryInfo = getDeliveryEstimate(selectedCity);
@@ -80,6 +93,20 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
       setAddedSuccess(false);
       onClose();
     }, 1200);
+  };
+
+  const handleBuyNowClick = () => {
+    if (onBuyNow) {
+      onBuyNow(
+        product,
+        selectedColor,
+        undefined,
+        undefined,
+        isGiftWrapped
+      );
+    } else {
+      handleAdd();
+    }
   };
 
   const handleSubmitReview = (e: React.FormEvent) => {
@@ -247,8 +274,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
 
               <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-1 border-t border-zinc-900">
-                <span>Shipping Carrier: <strong className="text-amber-200">{deliveryInfo.courier}</strong></span>
-                <span>Delivery: <strong className="text-emerald-400">{deliveryInfo.days}</strong></span>
+                <span>Courier Charge: <strong className="text-amber-200">Rs. 200</strong></span>
+                <span>Estimated Delivery: <strong className="text-emerald-400">{deliveryInfo.days}</strong></span>
               </div>
             </div>
 
@@ -266,29 +293,61 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </span>
             </label>
 
-            {/* Add to Cart CTA */}
-            <div className="space-y-2 pt-2">
-              <button
-                id="modal-add-to-cart-btn"
-                onClick={handleAdd}
-                className={`w-full py-4 rounded-xl font-bold text-sm tracking-wider uppercase transition-all shadow-xl flex items-center justify-center gap-2 ${
-                  addedSuccess
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-zinc-950 shadow-amber-950/60 border border-amber-300'
-                }`}
+            {/* Add to Cart, Buy Now & Direct WhatsApp CTA */}
+            <div className="space-y-2.5 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Add to Bag Button */}
+                <button
+                  id="modal-add-to-cart-btn"
+                  onClick={handleAdd}
+                  className={`w-full py-3.5 rounded-xl font-bold text-xs tracking-wider uppercase transition-all shadow-lg flex items-center justify-center gap-2 ${
+                    addedSuccess
+                      ? 'bg-emerald-600 text-white border border-emerald-500'
+                      : 'bg-zinc-800 hover:bg-zinc-750 text-amber-200 border border-amber-700/60 hover:border-amber-500'
+                  }`}
+                >
+                  {addedSuccess ? (
+                    <>
+                      <Check className="w-4 h-4 text-white" />
+                      <span>Added to Bag</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-4 h-4 text-amber-400" />
+                      <span>Add to Bag</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Buy Now Button */}
+                <button
+                  id="modal-buy-now-btn"
+                  onClick={handleBuyNowClick}
+                  className="w-full py-3.5 rounded-xl font-extrabold text-xs tracking-wider uppercase transition-all shadow-xl flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-zinc-950 shadow-amber-950/60 border border-amber-300"
+                >
+                  <Zap className="w-4 h-4 fill-zinc-950 text-zinc-950" />
+                  <span>Buy Now (COD)</span>
+                </button>
+              </div>
+
+              <a
+                id="modal-whatsapp-order-btn"
+                href={`https://wa.me/923137777344?text=${encodeURIComponent(
+                  `Assalam o Alaikum LeatherCraft PK!\nI want to order directly on WhatsApp:\n\n` +
+                  `📦 *Product:* ${product.name}\n` +
+                  `🎨 *Color:* ${selectedColor.name}\n` +
+                  `💰 *Price:* Rs. ${product.price.toLocaleString('en-PK')}${isGiftWrapped ? ' (+ Rs. 350 Gift Box)' : ''}\n` +
+                  `🚚 *Courier Charge:* Rs. 200\n` +
+                  `📍 *Delivery City:* ${selectedCity}\n\n` +
+                  `Please confirm my Cash on Delivery order!`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3.5 rounded-xl font-extrabold text-xs tracking-wider uppercase transition-all shadow-xl flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#20bd5a] text-zinc-950 shadow-green-950/40 border border-emerald-400 font-sans"
               >
-                {addedSuccess ? (
-                  <>
-                    <Check className="w-5 h-5" />
-                    <span>Added to Shopping Bag</span>
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="w-5 h-5 text-zinc-950" />
-                    <span>Add to Bag • Order Cash on Delivery</span>
-                  </>
-                )}
-              </button>
+                <MessageCircle className="w-5 h-5 fill-zinc-950 text-[#25D366]" />
+                <span>Order Direct on WhatsApp</span>
+              </a>
 
               <p className="text-[11px] text-center text-zinc-400 font-sans">
                 🔒 100% Risk-Free: Inspect package before paying courier in Pakistan
@@ -303,7 +362,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   className={`pb-1 flex items-center gap-1.5 ${activeTab === 'reviews' ? 'text-amber-400 border-b-2 border-amber-400 font-bold' : 'text-zinc-400 hover:text-amber-200'}`}
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
-                  <span>Customer Reviews ({reviewsList.length})</span>
+                  <span>Customer Reviews ({product.reviewsCount})</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('features')}

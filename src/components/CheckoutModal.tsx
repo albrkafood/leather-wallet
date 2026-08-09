@@ -323,7 +323,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               ) : (
                 <>
                   <CheckCircle className="w-5 h-5 text-zinc-950" />
-                  <span>Confirm & Place Order (Cash on Delivery)</span>
+                  <span>Confirm & Place Order</span>
                 </>
               )}
             </button>

@@ -136,7 +136,7 @@ export const Footer: React.FC<FooterProps> = ({
             <ul className="space-y-2 text-xs text-zinc-400 font-medium">
               <li>
                 <button onClick={onOpenTracker} className="hover:text-amber-300 flex items-center gap-1.5">
-                  <PackageCheck className="w-3.5 h-3.5 text-emerald-400" /> Track My Package (TCS / Leopards)
+                  <PackageCheck className="w-3.5 h-3.5 text-emerald-400" /> Track My Package (TCS / PostEx)
                 </button>
               </li>
               <li>

@@ -86,6 +86,18 @@ export default function App() {
     });
   };
 
+  const handleBuyNow = (
+    product: WalletProduct,
+    selectedColor: { name: string; hex: string; image: string },
+    customInitials?: string,
+    foilType?: FoilType,
+    isGiftWrapped?: boolean
+  ) => {
+    handleAddToCart(product, selectedColor, customInitials, foilType, isGiftWrapped);
+    setInspectProduct(null);
+    setIsCheckoutOpen(true);
+  };
+
   const handleUpdateQuantity = (index: number, newQty: number) => {
     if (newQty <= 0) {
       handleRemoveItem(index);
@@ -171,6 +183,7 @@ export default function App() {
         product={inspectProduct}
         onClose={() => setInspectProduct(null)}
         onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
       />
 
       <CartDrawer
