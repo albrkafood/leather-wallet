@@ -31,7 +31,8 @@ import {
   CheckSquare,
   Filter,
   Check,
-  ChevronDown
+  ChevronDown,
+  Menu
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -49,6 +50,24 @@ import {
   CartesianGrid
 } from 'recharts';
 
+import { OrdersTable } from './admin/OrdersTable';
+import { OrderDetailModal } from './admin/OrderDetailModal';
+import { PrintInvoiceModal } from './admin/PrintInvoiceModal';
+import { PrintPackingSlipModal } from './admin/PrintPackingSlipModal';
+import { AssignCourierModal } from './admin/AssignCourierModal';
+import { ProductsManagement } from './admin/ProductsManagement';
+import { InventoryManagement } from './admin/InventoryManagement';
+import { CustomersDirectory } from './admin/CustomersDirectory';
+import { ReportsAnalytics } from './admin/ReportsAnalytics';
+import { ActivityLogView } from './admin/ActivityLogView';
+import { AdminSettingsView } from './admin/AdminSettingsView';
+import { AdminNotificationsDropdown } from './admin/AdminNotificationsDropdown';
+import { DiscountsCouponsView } from './admin/DiscountsCouponsView';
+import { ShipmentsTrackingView } from './admin/ShipmentsTrackingView';
+import { ReturnsRefundsView } from './admin/ReturnsRefundsView';
+import { GlobalSearchModal } from './admin/GlobalSearchModal';
+import { AdminSidebar } from './admin/AdminSidebar';
+
 interface AdminPanelModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -65,8 +84,29 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({ isOpen, onClos
   const [loginError, setLoginError] = useState('');
   const [loadingLogin, setLoadingLogin] = useState(false);
 
+  // Active Admin Role State
+  const [currentRole, setCurrentRole] = useState<'Store Owner' | 'Admin' | 'Order Manager' | 'Inventory Manager' | 'Customer Support'>('Store Owner');
+
   // Tab State
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'analytics' | 'customers'>('dashboard');
+  const [activeTab, setActiveTab] = useState<
+    | 'dashboard'
+    | 'orders'
+    | 'products'
+    | 'inventory'
+    | 'customers'
+    | 'coupons'
+    | 'shipments'
+    | 'returns'
+    | 'reports'
+    | 'activity'
+    | 'settings'
+  >('orders');
+
+  // Sidebar & Search State
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [showGlobalSearchModal, setShowGlobalSearchModal] = useState(false);
+  const [isStoreLive, setIsStoreLive] = useState(true);
 
   // Date Filter State
   const [dateRange, setDateRange] = useState<string>('Last 30 Days');
@@ -80,6 +120,13 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({ isOpen, onClos
   const [statusFilter, setStatusFilter] = useState('All');
   const [paymentFilter, setPaymentFilter] = useState('All');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  // Detail & Print Modal States
+  const [selectedDetailOrder, setSelectedDetailOrder] = useState<any | null>(null);
+  const [printInvoiceOrders, setPrintInvoiceOrders] = useState<any[]>([]);
+  const [printPackingSlipOrders, setPrintPackingSlipOrders] = useState<any[]>([]);
+  const [showAssignCourierModal, setShowAssignCourierModal] = useState(false);
+  const [assignCourierOrderIds, setAssignCourierOrderIds] = useState<string[]>([]);
 
   // New Order Modal State
   const [showAddOrderModal, setShowAddOrderModal] = useState(false);
@@ -202,9 +249,117 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({ isOpen, onClos
       });
       if (res.ok) {
         setOrders((prev) => prev.filter((o) => o.id !== orderId && o.trackingNumber !== orderId));
+        if (selectedDetailOrder && (selectedDetailOrder.id === orderId || selectedDetailOrder.trackingNumber === orderId)) {
+          setSelectedDetailOrder(null);
+        }
       }
     } catch (err) {
       console.error('Failed to delete order', err);
+    }
+  };
+
+  const handleBulkUpdateStatus = async (ids: string[], newStatus: string) => {
+    setOrders((prev) =>
+      prev.map((o) => {
+        const oId = o.id || o.trackingNumber;
+        if (ids.includes(oId)) {
+          return {
+            ...o,
+            status: newStatus,
+            paymentStatus: newStatus === 'Delivered' && o.paymentMethod === 'COD' ? 'Paid' : o.paymentStatus,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return o;
+      })
+    );
+
+    // Persist changes to server
+    for (const id of ids) {
+      try {
+        await fetch(`/api/admin/orders/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+      } catch (err) {
+        console.error('Failed to bulk update order status', id, err);
+      }
+    }
+  };
+
+  const handleBulkAssignCourier = (ids: string[]) => {
+    setAssignCourierOrderIds(ids);
+    setShowAssignCourierModal(true);
+  };
+
+  const handlePerformAssignCourier = async (courierName: string) => {
+    setOrders((prev) =>
+      prev.map((o) => {
+        const oId = o.id || o.trackingNumber;
+        if (assignCourierOrderIds.includes(oId)) {
+          return { ...o, courierName, updatedAt: new Date().toISOString() };
+        }
+        return o;
+      })
+    );
+
+    for (const id of assignCourierOrderIds) {
+      try {
+        await fetch(`/api/admin/orders/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ courierName })
+        });
+      } catch (err) {
+        console.error('Failed to update courier', id, err);
+      }
+    }
+    setShowAssignCourierModal(false);
+  };
+
+  const handleUpdateSingleOrder = async (updatedOrder: any) => {
+    const oId = updatedOrder.id || updatedOrder.trackingNumber;
+    setOrders((prev) => prev.map((o) => ((o.id || o.trackingNumber) === oId ? updatedOrder : o)));
+    setSelectedDetailOrder(updatedOrder);
+
+    try {
+      await fetch(`/api/admin/orders/${oId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedOrder)
+      });
+    } catch (err) {
+      console.error('Failed to persist single order update', err);
+    }
+  };
+
+  const handleDuplicateOrder = async (orderToDuplicate: any) => {
+    const randomSuffix = Math.floor(10000 + Math.random() * 90000);
+    const duplicatedNumber = `LCPK-${randomSuffix}`;
+    const duplicated = {
+      ...orderToDuplicate,
+      id: undefined,
+      trackingNumber: duplicatedNumber,
+      status: 'Order Placed',
+      paymentStatus: 'Unpaid',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      const res = await fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(duplicated)
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOrders((prev) => [data.order, ...prev]);
+        setSelectedDetailOrder(data.order);
+      }
+    } catch (err) {
+      console.error('Failed to duplicate order', err);
     }
   };
 
@@ -495,42 +650,118 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({ isOpen, onClos
   }, [dateFilteredOrders]);
 
   return (
-    <div id="admin-panel-modal" className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-zinc-950/85 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
-      <div className="bg-zinc-900 border border-amber-800/40 w-full max-w-7xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
+    <div id="admin-panel-modal" className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-zinc-950/90 backdrop-blur-md animate-in fade-in duration-200 overflow-hidden">
+      <div className="bg-zinc-900 border border-amber-800/40 w-full max-w-7xl rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[94vh] max-h-[94vh]">
         
         {/* TOP BAR HEADER */}
-        <div className="px-4 sm:px-6 py-3.5 bg-gradient-to-r from-amber-950 via-zinc-900 to-amber-950 border-b border-amber-800/30 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 shrink-0">
-              <ShieldCheck className="w-6 h-6 text-amber-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="font-serif text-base sm:text-lg font-bold text-amber-100">
-                  LeatherCraft PK Admin
-                </h2>
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-sans uppercase tracking-wider">
-                  Shopify-Style Control Center
-                </span>
+        <div className="px-4 py-3 bg-zinc-950 border-b border-amber-800/30 flex items-center justify-between gap-3 shrink-0">
+          {/* Left: Mobile Drawer Toggle & Breadcrumbs */}
+          <div className="flex items-center gap-2.5">
+            {isAuthenticated && (
+              <button
+                onClick={() => setIsMobileSidebarOpen(true)}
+                className="p-1.5 md:hidden text-zinc-300 hover:text-amber-300 hover:bg-zinc-800 rounded-lg"
+                title="Open Sidebar"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
+
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 shrink-0">
+                <ShieldCheck className="w-5 h-5 text-amber-400" />
               </div>
-              <p className="text-xs text-zinc-400 hidden sm:block">Live order tracking, revenue metrics, customer management & direct WhatsApp contact</p>
+              <div>
+                <h2 className="font-serif text-sm font-bold text-amber-100 flex items-center gap-2">
+                  <span>LeatherCraft PK Admin</span>
+                  <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 uppercase font-sans">
+                    {activeTab}
+                  </span>
+                </h2>
+              </div>
             </div>
           </div>
 
+          {/* Center: Global Search Bar Trigger */}
+          {isAuthenticated && (
+            <button
+              onClick={() => setShowGlobalSearchModal(true)}
+              className="hidden sm:flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-amber-200 px-3 py-1.5 rounded-xl border border-amber-800/30 text-xs w-64 md:w-80 justify-between transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Search className="w-3.5 h-3.5 text-amber-400" />
+                <span>Search orders, SKU, customer...</span>
+              </div>
+              <kbd className="bg-zinc-950 border border-zinc-700 text-zinc-400 font-mono px-1.5 py-0.5 text-[10px] rounded">
+                ⌘K
+              </kbd>
+            </button>
+          )}
+
+          {/* Right: Actions */}
           <div className="flex items-center gap-2">
             {isAuthenticated && (
-              <button
-                onClick={() => setShowAddOrderModal(true)}
-                className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all shadow-md"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">New Order</span>
-              </button>
+              <>
+                {/* Search Icon for Mobile */}
+                <button
+                  onClick={() => setShowGlobalSearchModal(true)}
+                  className="sm:hidden p-2 text-zinc-400 hover:text-amber-200 hover:bg-zinc-800 rounded-lg"
+                >
+                  <Search className="w-4 h-4 text-amber-400" />
+                </button>
+
+                {/* Store Status Toggle */}
+                <button
+                  onClick={() => setIsStoreLive(!isStoreLive)}
+                  className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors ${
+                    isStoreLive
+                      ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800/60'
+                      : 'bg-red-950/80 text-red-300 border-red-800/60'
+                  }`}
+                  title="Toggle Store Status"
+                >
+                  <span className={`w-2 h-2 rounded-full ${isStoreLive ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+                  <span>Store: {isStoreLive ? 'Live' : 'Maintenance'}</span>
+                </button>
+
+                {/* Notifications Bell */}
+                <AdminNotificationsDropdown
+                  onSelectOrder={(ordId) => {
+                    setActiveTab('orders');
+                    const found = orders.find((o) => o.id === ordId || o.trackingNumber === ordId);
+                    if (found) setSelectedDetailOrder(found);
+                  }}
+                />
+
+                {/* Role Switcher */}
+                <div className="hidden lg:flex items-center gap-1 bg-zinc-950 border border-amber-800/40 rounded-xl px-2 py-1 text-xs">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <select
+                    value={currentRole}
+                    onChange={(e) => setCurrentRole(e.target.value as any)}
+                    className="bg-transparent text-amber-300 font-bold focus:outline-none cursor-pointer text-xs"
+                  >
+                    <option value="Store Owner" className="bg-zinc-900">Store Owner</option>
+                    <option value="Admin" className="bg-zinc-900">Admin</option>
+                    <option value="Order Manager" className="bg-zinc-900">Order Manager</option>
+                    <option value="Inventory Manager" className="bg-zinc-900">Inventory Manager</option>
+                    <option value="Customer Support" className="bg-zinc-900">Customer Support</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={() => setShowAddOrderModal(true)}
+                  className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition-all shadow-md shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden xl:inline">+ New Order</span>
+                </button>
+              </>
             )}
 
             <button
               onClick={onClose}
-              className="p-2 text-zinc-400 hover:text-amber-200 hover:bg-zinc-800 rounded-full transition-colors"
+              className="p-1.5 text-zinc-400 hover:text-amber-200 hover:bg-zinc-800 rounded-lg transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -538,8 +769,7 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({ isOpen, onClos
         </div>
 
         {/* MODAL MAIN BODY */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 text-zinc-200 space-y-6">
-          {!isAuthenticated ? (
+        {!isAuthenticated ? (
             /* AUTH LOGIN SCREEN */
             <div className="max-w-md mx-auto py-12 text-center space-y-6">
               <div className="w-16 h-16 mx-auto rounded-full bg-amber-950/80 border border-amber-600/40 flex items-center justify-center text-amber-400 shadow-xl">
@@ -587,130 +817,97 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({ isOpen, onClos
               </form>
             </div>
           ) : (
-            /* AUTHENTICATED DASHBOARD CONTENT */
-            <div className="space-y-6">
-              
-              {/* NAVIGATION TABS & DATE RANGE SELECTOR BAR */}
-              <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-zinc-950/80 p-3 rounded-xl border border-amber-800/30">
-                {/* Tabs */}
-                <div className="flex items-center gap-1 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
-                  <button
-                    onClick={() => setActiveTab('dashboard')}
-                    className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
-                      activeTab === 'dashboard'
-                        ? 'bg-amber-500 text-zinc-950 shadow-md font-extrabold'
-                        : 'text-zinc-400 hover:text-amber-200 hover:bg-zinc-800/60'
-                    }`}
-                  >
-                    <TrendingUp className="w-4 h-4" />
-                    <span>Dashboard</span>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab('orders')}
-                    className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
-                      activeTab === 'orders'
-                        ? 'bg-amber-500 text-zinc-950 shadow-md font-extrabold'
-                        : 'text-zinc-400 hover:text-amber-200 hover:bg-zinc-800/60'
-                    }`}
-                  >
-                    <Package className="w-4 h-4" />
-                    <span>Orders Directory ({searchFilteredOrders.length})</span>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab('analytics')}
-                    className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
-                      activeTab === 'analytics'
-                        ? 'bg-amber-500 text-zinc-950 shadow-md font-extrabold'
-                        : 'text-zinc-400 hover:text-amber-200 hover:bg-zinc-800/60'
-                    }`}
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    <span>Charts & Sales</span>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab('customers')}
-                    className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
-                      activeTab === 'customers'
-                        ? 'bg-amber-500 text-zinc-950 shadow-md font-extrabold'
-                        : 'text-zinc-400 hover:text-amber-200 hover:bg-zinc-800/60'
-                    }`}
-                  >
-                    <Users className="w-4 h-4" />
-                    <span>Top Customers ({topCustomersData.length})</span>
-                  </button>
-                </div>
-
-                {/* Date Filter & Control Actions */}
-                <div className="flex flex-wrap items-center gap-2 justify-end">
-                  {/* Date Filter Dropdown */}
-                  <div className="flex items-center gap-1.5 bg-zinc-900 border border-amber-800/40 rounded-lg px-2.5 py-1.5 text-xs">
-                    <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
-                    <select
-                      value={dateRange}
-                      onChange={(e) => setDateRange(e.target.value)}
-                      className="bg-transparent text-amber-100 font-semibold focus:outline-none cursor-pointer"
-                    >
-                      <option value="Today" className="bg-zinc-900 text-amber-100">Today</option>
-                      <option value="Yesterday" className="bg-zinc-900 text-amber-100">Yesterday</option>
-                      <option value="Last 7 Days" className="bg-zinc-900 text-amber-100">Last 7 Days</option>
-                      <option value="Last 30 Days" className="bg-zinc-900 text-amber-100">Last 30 Days</option>
-                      <option value="This Month" className="bg-zinc-900 text-amber-100">This Month</option>
-                      <option value="Last Month" className="bg-zinc-900 text-amber-100">Last Month</option>
-                      <option value="Custom Date Range" className="bg-zinc-900 text-amber-100">Custom Date Range</option>
-                    </select>
-                  </div>
-
-                  {dateRange === 'Custom Date Range' && (
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="date"
-                        value={customStartDate}
-                        onChange={(e) => setCustomStartDate(e.target.value)}
-                        className="bg-zinc-900 border border-zinc-700/60 rounded-lg px-2 py-1 text-xs text-amber-100 focus:outline-none"
-                      />
-                      <span className="text-zinc-500 text-xs">to</span>
-                      <input
-                        type="date"
-                        value={customEndDate}
-                        onChange={(e) => setCustomEndDate(e.target.value)}
-                        className="bg-zinc-900 border border-zinc-700/60 rounded-lg px-2 py-1 text-xs text-amber-100 focus:outline-none"
-                      />
-                    </div>
-                  )}
-
-                  {/* Export CSV */}
-                  <button
-                    onClick={handleExportCSV}
-                    className="p-2 bg-amber-950/80 hover:bg-amber-900 text-amber-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors border border-amber-800/50"
-                    title="Export filtered orders to CSV"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Export CSV</span>
-                  </button>
-
-                  {/* Refresh */}
-                  <button
-                    onClick={fetchOrders}
-                    disabled={loadingOrders}
-                    className="p-2 bg-zinc-800 hover:bg-zinc-700 text-amber-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors border border-amber-800/40"
-                    title="Refresh orders"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${loadingOrders ? 'animate-spin text-amber-400' : ''}`} />
-                  </button>
-
-                  {/* Logout */}
-                  <button
-                    onClick={handleLogout}
-                    className="p-2 bg-red-950/60 hover:bg-red-900/60 text-red-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors border border-red-800/50"
-                    title="Sign Out"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+            /* AUTHENTICATED MAIN LAYOUT (SIDEBAR + CONTENT) */
+            <div className="flex-1 flex overflow-hidden">
+              {/* Desktop Left Sidebar */}
+              <div className="hidden md:block h-full shrink-0">
+                <AdminSidebar
+                  activeTab={activeTab}
+                  onSelectTab={(tab, statusF) => {
+                    setActiveTab(tab);
+                    if (statusF) setStatusFilter(statusF);
+                  }}
+                  isCollapsed={isSidebarCollapsed}
+                  onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                  currentRole={currentRole}
+                  onLogout={handleLogout}
+                />
               </div>
+
+              {/* Mobile Drawer Overlay */}
+              {isMobileSidebarOpen && (
+                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm md:hidden flex">
+                  <AdminSidebar
+                    activeTab={activeTab}
+                    onSelectTab={(tab, statusF) => {
+                      setActiveTab(tab);
+                      if (statusF) setStatusFilter(statusF);
+                    }}
+                    isCollapsed={false}
+                    onToggleCollapse={() => {}}
+                    currentRole={currentRole}
+                    onLogout={handleLogout}
+                    isMobileDrawer={true}
+                    onCloseMobileDrawer={() => setIsMobileSidebarOpen(false)}
+                  />
+                  <div
+                    className="flex-1"
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                  />
+                </div>
+              )}
+
+              {/* Main Scrollable View Area */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 text-zinc-200 space-y-6">
+
+                {/* DATE FILTER BAR FOR OVERVIEW / DASHBOARD VIEW */}
+                {activeTab === 'dashboard' && (
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-zinc-950/80 p-3.5 rounded-xl border border-amber-800/30">
+                    <div>
+                      <h3 className="font-serif font-bold text-amber-100 text-sm">
+                        Financial Overview & Revenue Analytics
+                      </h3>
+                      <p className="text-[11px] text-zinc-400">Total revenue, COD pending collections, average order value & sales charts</p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 bg-zinc-900 border border-amber-800/40 rounded-lg px-2.5 py-1.5 text-xs">
+                        <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
+                        <select
+                          value={dateRange}
+                          onChange={(e) => setDateRange(e.target.value)}
+                          className="bg-transparent text-amber-100 font-semibold focus:outline-none cursor-pointer"
+                        >
+                          <option value="Today" className="bg-zinc-900 text-amber-100">Today</option>
+                          <option value="Yesterday" className="bg-zinc-900 text-amber-100">Yesterday</option>
+                          <option value="Last 7 Days" className="bg-zinc-900 text-amber-100">Last 7 Days</option>
+                          <option value="Last 30 Days" className="bg-zinc-900 text-amber-100">Last 30 Days</option>
+                          <option value="This Month" className="bg-zinc-900 text-amber-100">This Month</option>
+                          <option value="Last Month" className="bg-zinc-900 text-amber-100">Last Month</option>
+                          <option value="Custom Date Range" className="bg-zinc-900 text-amber-100">Custom Date Range</option>
+                        </select>
+                      </div>
+
+                      {dateRange === 'Custom Date Range' && (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="date"
+                            value={customStartDate}
+                            onChange={(e) => setCustomStartDate(e.target.value)}
+                            className="bg-zinc-900 border border-zinc-700/60 rounded-lg px-2 py-1 text-xs text-amber-100 focus:outline-none"
+                          />
+                          <span className="text-zinc-500 text-xs">to</span>
+                          <input
+                            type="date"
+                            value={customEndDate}
+                            onChange={(e) => setCustomEndDate(e.target.value)}
+                            className="bg-zinc-900 border border-zinc-700/60 rounded-lg px-2 py-1 text-xs text-amber-100 focus:outline-none"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
               {/* TAB 1: DASHBOARD OVERVIEW */}
               {activeTab === 'dashboard' && (
@@ -995,222 +1192,27 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({ isOpen, onClos
                 </div>
               )}
 
-              {/* TAB 2: ORDERS DIRECTORY TABLE & CARDS */}
+              {/* TAB 2: PROFESSIONAL ORDERS TABLE & DIRECTORY */}
               {activeTab === 'orders' && (
                 <div className="space-y-4">
-                  {/* Search, Status & Payment Filter Toolbar */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-zinc-950 p-3 rounded-xl border border-zinc-800">
-                    <div className="relative flex-1">
-                      <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-3" />
-                      <input
-                        type="text"
-                        placeholder="Search by Customer Name, Phone (0300...), City, Product, or Tracking ID..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-700/60 rounded-lg pl-9 pr-4 py-2 text-xs text-amber-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400"
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="bg-zinc-900 border border-zinc-700/60 rounded-lg px-3 py-2 text-xs text-amber-200 focus:outline-none focus:border-amber-400"
-                      >
-                        <option value="All">All Order Statuses</option>
-                        <option value="Order Placed">Order Placed</option>
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="Processing">Processing</option>
-                        <option value="Quality Check">Quality Check</option>
-                        <option value="Ready to Ship">Ready to Ship</option>
-                        <option value="Dispatched via TCS">Dispatched via TCS</option>
-                        <option value="Out for Delivery">Out for Delivery</option>
-                        <option value="Delivered">Delivered</option>
-                        <option value="Cancelled">Cancelled</option>
-                        <option value="Returned">Returned</option>
-                      </select>
-
-                      <select
-                        value={paymentFilter}
-                        onChange={(e) => setPaymentFilter(e.target.value)}
-                        className="bg-zinc-900 border border-zinc-700/60 rounded-lg px-3 py-2 text-xs text-amber-200 focus:outline-none focus:border-amber-400"
-                      >
-                        <option value="All">All Payment Statuses</option>
-                        <option value="Paid">Paid</option>
-                        <option value="Unpaid">Unpaid</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Orders Cards List */}
                   {loadingOrders ? (
                     <div className="text-center py-12 text-zinc-500 flex items-center justify-center gap-2">
                       <RefreshCw className="w-5 h-5 animate-spin text-amber-400" />
-                      <span>Loading live customer orders...</span>
-                    </div>
-                  ) : searchFilteredOrders.length === 0 ? (
-                    <div className="text-center py-12 bg-zinc-950/40 rounded-xl border border-zinc-800">
-                      <Package className="w-10 h-10 text-zinc-600 mx-auto mb-2" />
-                      <p className="text-sm font-semibold text-zinc-300">No matching orders found</p>
-                      <p className="text-xs text-zinc-500 mt-1">Try adjusting your search query or date filter</p>
+                      <span>Loading live customer orders directory...</span>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {searchFilteredOrders.map((order) => {
-                        const cleanPhone = order.shipping?.phone?.replace(/[^0-9]/g, '') || '';
-                        const formattedPhoneForWa = cleanPhone.startsWith('0') ? `92${cleanPhone.slice(1)}` : cleanPhone;
-
-                        const waMsg = encodeURIComponent(
-                          `Assalam o Alaikum ${order.shipping?.fullName || 'Valued Customer'}!\n\n` +
-                          `This is LeatherCraft PK regarding your Order *#${order.trackingNumber}*:\n` +
-                          `📦 *Item(s):* ${order.items?.map((i: any) => `${i.product?.name || i.name} (${i.selectedColor?.name || ''})`).join(', ')}\n` +
-                          `💵 *Total Amount:* Rs. ${order.total?.toLocaleString('en-PK')} (${order.paymentMethod || 'COD'})\n` +
-                          `📍 *Address:* ${order.shipping?.address}, ${order.shipping?.city}\n\n` +
-                          `Current Status: *${order.status}*\n` +
-                          `Payment Status: *${order.paymentStatus || 'Unpaid'}*\n\n` +
-                          `Thank you for choosing LeatherCraft PK!`
-                        );
-
-                        return (
-                          <div
-                            key={order.id || order.trackingNumber}
-                            className="bg-zinc-950 border border-amber-800/40 rounded-xl p-4 shadow-lg space-y-3 transition-all hover:border-amber-600/60"
-                          >
-                            {/* Card Header Row */}
-                            <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-zinc-800">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-sm font-bold text-amber-400 bg-amber-950/80 px-2.5 py-1 rounded border border-amber-800/60">
-                                  #{order.trackingNumber}
-                                </span>
-                                <span className="text-xs text-zinc-400">
-                                  {new Date(order.createdAt).toLocaleString('en-PK', { dateStyle: 'medium', timeStyle: 'short' })}
-                                </span>
-                              </div>
-
-                              {/* Actions: Status Dropdown & Payment Toggle & Delete */}
-                              <div className="flex items-center gap-2 flex-wrap">
-                                {/* Order Status */}
-                                <select
-                                  value={order.status}
-                                  disabled={updatingId === (order.id || order.trackingNumber)}
-                                  onChange={(e) => handleStatusChange(order.id || order.trackingNumber, e.target.value)}
-                                  className="bg-zinc-900 border border-amber-600/50 text-amber-200 text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer"
-                                >
-                                  <option value="Order Placed">📦 Order Placed</option>
-                                  <option value="Confirmed">👍 Confirmed</option>
-                                  <option value="Processing">⚙️ Processing</option>
-                                  <option value="Quality Check">🔍 Quality Check</option>
-                                  <option value="Ready to Ship">🎁 Ready to Ship</option>
-                                  <option value="Dispatched via TCS">🚚 Dispatched via TCS</option>
-                                  <option value="Out for Delivery">🛵 Out for Delivery</option>
-                                  <option value="Delivered">✅ Delivered</option>
-                                  <option value="Cancelled">❌ Cancelled</option>
-                                  <option value="Returned">↩️ Returned</option>
-                                </select>
-
-                                {/* Payment Status Toggle Button */}
-                                <button
-                                  onClick={() => handlePaymentStatusToggle(order.id || order.trackingNumber, order.paymentStatus || 'Unpaid')}
-                                  className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors ${
-                                    order.paymentStatus === 'Paid'
-                                      ? 'bg-emerald-950/80 text-emerald-300 border-emerald-600/60 hover:bg-emerald-900/80'
-                                      : 'bg-amber-950/80 text-amber-300 border-amber-600/60 hover:bg-amber-900/80'
-                                  }`}
-                                  title="Click to toggle Payment Status"
-                                >
-                                  {order.paymentStatus === 'Paid' ? 'Paid ✓' : 'Unpaid ⏳'}
-                                </button>
-
-                                <button
-                                  onClick={() => handleDeleteOrder(order.id || order.trackingNumber)}
-                                  className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-zinc-900 rounded-lg transition-colors"
-                                  title="Delete Order"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Info Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                              {/* Customer Details */}
-                              <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/80 space-y-1.5">
-                                <div className="font-bold text-amber-200 text-sm flex items-center justify-between">
-                                  <span>{order.shipping?.fullName || 'Customer Name'}</span>
-                                  <span className="text-[10px] text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-800/50 font-sans font-semibold">
-                                    {order.paymentMethod || 'COD'}
-                                  </span>
-                                </div>
-
-                                <div className="flex items-center gap-2 text-zinc-300 font-mono">
-                                  <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                                  <span>{order.shipping?.phone}</span>
-                                  {formattedPhoneForWa && (
-                                    <a
-                                      href={`https://wa.me/${formattedPhoneForWa}?text=${waMsg}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="ml-auto inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-zinc-950 font-sans font-extrabold px-2 py-0.5 rounded text-[10px] transition-transform hover:scale-105"
-                                    >
-                                      <MessageCircle className="w-3 h-3 fill-zinc-950" /> WhatsApp Customer
-                                    </a>
-                                  )}
-                                </div>
-
-                                <div className="flex items-start gap-1.5 text-zinc-400 pt-1">
-                                  <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                                  <div>
-                                    <p className="text-zinc-200 font-medium">{order.shipping?.address}</p>
-                                    {order.shipping?.nearestLandmark && (
-                                      <p className="text-amber-400/90 text-[11px] italic">
-                                        Landmark: {order.shipping?.nearestLandmark}
-                                      </p>
-                                    )}
-                                    <p className="text-zinc-400 text-[11px]">
-                                      {order.shipping?.city}, {order.shipping?.province}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Purchased Items & Price */}
-                              <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/80 flex flex-col justify-between">
-                                <div>
-                                  <div className="text-[11px] uppercase font-bold text-zinc-400 mb-1.5">
-                                    Items ({order.items?.length || 0}):
-                                  </div>
-                                  <div className="space-y-1.5 max-h-24 overflow-y-auto pr-1">
-                                    {order.items?.map((item: any, idx: number) => (
-                                      <div key={idx} className="flex items-center justify-between text-zinc-300 text-xs border-b border-zinc-800/50 pb-1">
-                                        <div className="truncate pr-2">
-                                          <span className="font-semibold text-amber-100">{item.quantity}x</span>{' '}
-                                          {item.product?.name || item.name}
-                                          {item.selectedColor?.name && (
-                                            <span className="text-zinc-400 text-[11px] block">
-                                              Color: {item.selectedColor.name}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="font-mono text-amber-300 text-right shrink-0">
-                                          Rs. {((item.product?.price || item.price || 0) * (item.quantity || 1)).toLocaleString('en-PK')}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                <div className="pt-2 border-t border-zinc-800 flex items-center justify-between mt-2">
-                                  <span className="text-xs text-zinc-400 font-semibold">Total Payable Amount:</span>
-                                  <span className="font-serif font-extrabold text-base text-amber-300">
-                                    Rs. {(order.total || 0).toLocaleString('en-PK')}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <OrdersTable
+                      orders={dateFilteredOrders}
+                      onSelectOrder={(ord) => setSelectedDetailOrder(ord)}
+                      onUpdateStatus={handleStatusChange}
+                      onTogglePaymentStatus={handlePaymentStatusToggle}
+                      onDeleteOrder={handleDeleteOrder}
+                      onBulkUpdateStatus={handleBulkUpdateStatus}
+                      onBulkAssignCourier={handleBulkAssignCourier}
+                      onOpenPrintInvoice={(ords) => setPrintInvoiceOrders(ords)}
+                      onOpenPrintPackingSlip={(ords) => setPrintPackingSlipOrders(ords)}
+                      onExportCSV={handleExportCSV}
+                    />
                   )}
                 </div>
               )}
@@ -1288,61 +1290,66 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({ isOpen, onClos
                 </div>
               )}
 
-              {/* TAB 4: TOP CUSTOMERS DIRECTORY */}
-              {activeTab === 'customers' && (
-                <div className="bg-zinc-950/80 border border-amber-800/30 p-5 rounded-xl space-y-4">
-                  <div className="border-b border-zinc-800 pb-3">
-                    <h4 className="font-serif font-bold text-amber-100 text-base flex items-center gap-2">
-                      <Users className="w-5 h-5 text-amber-400" />
-                      <span>Top Customers & Frequent Buyers</span>
-                    </h4>
-                    <p className="text-xs text-zinc-400">Buyers ranked by total order volume & expenditure</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    {topCustomersData.map((customer, idx) => {
-                      const cleanPhone = customer.phone.replace(/[^0-9]/g, '');
-                      const formattedWa = cleanPhone.startsWith('0') ? `92${cleanPhone.slice(1)}` : cleanPhone;
-
-                      return (
-                        <div key={idx} className="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center font-serif font-bold text-amber-300">
-                              #{idx + 1}
-                            </div>
-                            <div>
-                              <div className="font-bold text-amber-100 text-sm">{customer.name}</div>
-                              <div className="text-xs text-zinc-400 font-mono">{customer.phone} • {customer.city}</div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                            <div className="text-right">
-                              <div className="text-xs text-zinc-400 uppercase font-semibold">{customer.ordersCount} Order(s)</div>
-                              <div className="font-serif font-extrabold text-amber-300 text-base">
-                                Rs. {customer.totalSpent.toLocaleString('en-PK')}
-                              </div>
-                            </div>
-
-                            <a
-                              href={`https://wa.me/${formattedWa}?text=${encodeURIComponent(`Assalam o Alaikum ${customer.name}! Thank you for being a valued VIP customer of LeatherCraft PK.`)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="bg-emerald-600 hover:bg-emerald-500 text-zinc-950 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-transform hover:scale-105"
-                            >
-                              <MessageCircle className="w-4 h-4 fill-zinc-950" /> WhatsApp
-                            </a>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+              {/* TAB: PRODUCTS MANAGEMENT */}
+              {activeTab === 'products' && (
+                <ProductsManagement currentRole={currentRole} onRefreshOrders={fetchOrders} />
               )}
 
+              {/* TAB: INVENTORY MANAGEMENT */}
+              {activeTab === 'inventory' && (
+                <InventoryManagement currentRole={currentRole} />
+              )}
+
+              {/* TAB: CUSTOMERS DIRECTORY */}
+              {activeTab === 'customers' && (
+                <CustomersDirectory orders={orders} />
+              )}
+
+              {/* TAB: REPORTS & ANALYTICS */}
+              {activeTab === 'reports' && (
+                <ReportsAnalytics orders={orders} />
+              )}
+
+              {/* TAB: DISCOUNTS & COUPONS */}
+              {activeTab === 'coupons' && (
+                <DiscountsCouponsView />
+              )}
+
+              {/* TAB: SHIPMENTS & TRACKING */}
+              {activeTab === 'shipments' && (
+                <ShipmentsTrackingView />
+              )}
+
+              {/* TAB: RETURNS & REFUNDS */}
+              {activeTab === 'returns' && (
+                <ReturnsRefundsView />
+              )}
+
+              {/* TAB: AUDIT & ACTIVITY LOG */}
+              {activeTab === 'activity' && (
+                <ActivityLogView />
+              )}
+
+              {/* TAB: STORE SETTINGS */}
+              {activeTab === 'settings' && (
+                <AdminSettingsView currentRole={currentRole} />
+              )}
+
+              </div>
             </div>
           )}
-        </div>
+
+        {/* Global Search Modal */}
+        <GlobalSearchModal
+          isOpen={showGlobalSearchModal}
+          onClose={() => setShowGlobalSearchModal(false)}
+          orders={orders}
+          onSelectOrder={(ord) => {
+            setSelectedDetailOrder(ord);
+            setActiveTab('orders');
+          }}
+          onNavigateTab={(tab) => setActiveTab(tab)}
+        />
       </div>
 
       {/* CREATE MANUAL ORDER MODAL */}
@@ -1478,6 +1485,45 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({ isOpen, onClos
             </form>
           </div>
         </div>
+      )}
+
+      {/* POPUP MODALS FOR SHOPIFY STYLE ORDER MANAGEMENT */}
+      {selectedDetailOrder && (
+        <OrderDetailModal
+          isOpen={true}
+          order={selectedDetailOrder}
+          onClose={() => setSelectedDetailOrder(null)}
+          onUpdateOrder={handleUpdateSingleOrder}
+          onDeleteOrder={(id) => handleDeleteOrder(id)}
+          onOpenPrintInvoice={(orders) => setPrintInvoiceOrders(orders)}
+          onOpenPrintPackingSlip={(orders) => setPrintPackingSlipOrders(orders)}
+          onDuplicateOrder={handleDuplicateOrder}
+        />
+      )}
+
+      {printInvoiceOrders.length > 0 && (
+        <PrintInvoiceModal
+          isOpen={true}
+          orders={printInvoiceOrders}
+          onClose={() => setPrintInvoiceOrders([])}
+        />
+      )}
+
+      {printPackingSlipOrders.length > 0 && (
+        <PrintPackingSlipModal
+          isOpen={true}
+          orders={printPackingSlipOrders}
+          onClose={() => setPrintPackingSlipOrders([])}
+        />
+      )}
+
+      {showAssignCourierModal && (
+        <AssignCourierModal
+          isOpen={showAssignCourierModal}
+          selectedOrderIds={assignCourierOrderIds}
+          onClose={() => setShowAssignCourierModal(false)}
+          onAssignCourier={handlePerformAssignCourier}
+        />
       )}
     </div>
   );
