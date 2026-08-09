@@ -25,6 +25,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     email: '',
     phone: '',
     address: '',
+    nearestLandmark: '',
     city: 'Lahore',
     province: 'Punjab',
     postalCode: '',
@@ -176,13 +177,24 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-zinc-400 mb-1">Complete Street Address (House/Apartment #, Sector) *</label>
+                <label className="block text-zinc-400 mb-1">Complete Street Address (House/Flat No, Block, Society/Mohallah) *</label>
                 <input
                   required
                   type="text"
-                  placeholder="e.g. House 12-A, Street 4, Sector F-7/2"
+                  placeholder="e.g. House 12-A, Street 4, Sector F-7/2 or Main Commercial Area"
                   value={shipping.address}
                   onChange={(e) => setShipping({ ...shipping, address: e.target.value })}
+                  className="w-full bg-zinc-950 border border-amber-800/40 rounded-lg p-2.5 text-amber-100 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-zinc-400 mb-1">Nearest Landmark (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Near Famous Mosque, Opposite Bank, Hospital, or Park"
+                  value={shipping.nearestLandmark || ''}
+                  onChange={(e) => setShipping({ ...shipping, nearestLandmark: e.target.value })}
                   className="w-full bg-zinc-950 border border-amber-800/40 rounded-lg p-2.5 text-amber-100 focus:outline-none focus:border-amber-400"
                 />
               </div>

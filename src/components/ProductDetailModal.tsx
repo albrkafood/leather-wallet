@@ -339,6 +339,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   `💰 *Price:* Rs. ${product.price.toLocaleString('en-PK')}${isGiftWrapped ? ' (+ Rs. 350 Gift Box)' : ''}\n` +
                   `🚚 *Courier Charge:* Rs. 200\n` +
                   `📍 *Delivery City:* ${selectedCity}\n\n` +
+                  `💵 *Total Payable Amount:* Rs. ${(product.price + (isGiftWrapped ? 350 : 0) + 200).toLocaleString('en-PK')}\n\n` +
                   `Please confirm my Cash on Delivery order!`
                 )}`}
                 target="_blank"

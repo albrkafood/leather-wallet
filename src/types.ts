@@ -53,6 +53,7 @@ export interface ShippingDetails {
   email: string;
   phone: string; // e.g. 03001234567
   address: string;
+  nearestLandmark?: string;
   city: string;
   province: string;
   postalCode?: string;

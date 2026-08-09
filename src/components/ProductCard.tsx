@@ -89,10 +89,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <span className="text-amber-400/90 font-medium tracking-wide uppercase text-[10px]">
               {product.leatherType}
             </span>
-            <div className="flex items-center gap-1 text-amber-400">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              <span className="font-bold text-amber-200 text-xs">{product.rating}</span>
-              <span className="text-zinc-500 text-[10px]">({product.reviewsCount})</span>
+            <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`w-3 h-3 ${
+                      star <= Math.round(product.rating)
+                        ? 'fill-amber-400 text-amber-400'
+                        : 'fill-zinc-700 text-zinc-700'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="font-bold text-amber-200 text-xs ml-0.5">{product.rating}</span>
+              <span className="text-zinc-500 text-[10px]">({product.reviewsCount} reviews)</span>
             </div>
           </div>
 
@@ -100,11 +111,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <h3 className="font-serif font-bold text-lg text-amber-100 group-hover:text-amber-300 transition-colors line-clamp-1">
             {product.name}
           </h3>
-
-          {/* Tagline */}
-          <p className="text-xs text-zinc-400 line-clamp-2 mt-1 font-sans leading-relaxed">
-            {product.tagline}
-          </p>
 
           {/* Features highlight */}
           <div className="flex items-center gap-2 text-[11px] text-amber-300/80 mt-2">

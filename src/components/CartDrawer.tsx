@@ -222,7 +222,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 href={`https://wa.me/923137777344?text=${encodeURIComponent(
                   `Assalam o Alaikum LeatherCraft PK!\nI want to place my order directly via WhatsApp:\n\n` +
                   items.map((item, idx) => `${idx + 1}. *${item.product.name}* (${item.selectedColor.name}) x${item.quantity} - Rs. ${(item.product.price * item.quantity).toLocaleString('en-PK')}`).join('\n') +
-                  `\n\n💰 *Total Amount:* Rs. ${finalTotal.toLocaleString('en-PK')}\n🚚 *Payment:* Cash on Delivery\n\nPlease confirm my order!`
+                  `\n\n💵 *Total Payable Amount:* Rs. ${finalTotal.toLocaleString('en-PK')}\n🚚 *Payment:* Cash on Delivery\n\nPlease confirm my order!`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"

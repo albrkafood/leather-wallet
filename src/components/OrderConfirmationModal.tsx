@@ -15,7 +15,7 @@ export const OrderConfirmationModal: React.FC<OrderConfirmationModalProps> = ({ 
   };
 
   const whatsappMessage = encodeURIComponent(
-    `Assalam o Alaikum! I placed order #${order.trackingNumber} on LeatherCraft PK. Please confirm dispatch details.`
+    `Assalam o Alaikum! I placed order #${order.trackingNumber} on LeatherCraft PK.\nTotal Payable Amount: Rs. ${order.total.toLocaleString('en-PK')}\nPayment: Cash on Delivery\n\nPlease confirm dispatch details.`
   );
 
   return (
