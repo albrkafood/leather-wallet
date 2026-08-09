@@ -11,6 +11,7 @@ import { OrderConfirmationModal } from './components/OrderConfirmationModal';
 import { OrderTrackerModal } from './components/OrderTrackerModal';
 import { AiGiftAdvisorModal } from './components/AiGiftAdvisorModal';
 import { AuthenticityCheckerModal } from './components/AuthenticityCheckerModal';
+import { AdminPanelModal } from './components/AdminPanelModal';
 import { LeatherCareSection } from './components/LeatherCareSection';
 import { ReviewsSection } from './components/ReviewsSection';
 import { Footer } from './components/Footer';
@@ -47,6 +48,7 @@ export default function App() {
   const [isTrackerOpen, setIsTrackerOpen] = useState(false);
   const [isAiAdvisorOpen, setIsAiAdvisorOpen] = useState(false);
   const [isAuthenticityOpen, setIsAuthenticityOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   // Cart operations
   const handleAddToCart = (
@@ -136,6 +138,7 @@ export default function App() {
         onOpenEmbossingStudio={() => {}}
         onOpenAiAdvisor={() => setIsAiAdvisorOpen(true)}
         onOpenAuthenticity={() => setIsAuthenticityOpen(true)}
+        onOpenAdminPanel={() => setIsAdminOpen(true)}
         onSelectCategory={setSelectedCategory}
         selectedCategory={selectedCategory}
         searchQuery={searchQuery}
@@ -175,6 +178,7 @@ export default function App() {
         onOpenEmbossingStudio={() => {}}
         onOpenAiAdvisor={() => setIsAiAdvisorOpen(true)}
         onOpenAuthenticity={() => setIsAuthenticityOpen(true)}
+        onOpenAdminPanel={() => setIsAdminOpen(true)}
         onSelectCategory={setSelectedCategory}
       />
 
@@ -226,6 +230,11 @@ export default function App() {
       <AuthenticityCheckerModal
         isOpen={isAuthenticityOpen}
         onClose={() => setIsAuthenticityOpen(false)}
+      />
+
+      <AdminPanelModal
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
       />
 
       {/* Floating WhatsApp Quick Contact Button */}

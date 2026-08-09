@@ -9,7 +9,8 @@ import {
   Menu, 
   X,
   Phone,
-  HelpCircle
+  HelpCircle,
+  Lock
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -19,6 +20,7 @@ interface HeaderProps {
   onOpenEmbossingStudio: () => void;
   onOpenAiAdvisor: () => void;
   onOpenAuthenticity: () => void;
+  onOpenAdminPanel?: () => void;
   onSelectCategory: (cat: string) => void;
   selectedCategory: string;
   searchQuery: string;
@@ -32,6 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenEmbossingStudio,
   onOpenAiAdvisor,
   onOpenAuthenticity,
+  onOpenAdminPanel,
   onSelectCategory,
   selectedCategory,
   searchQuery,
@@ -126,6 +129,18 @@ export const Header: React.FC<HeaderProps> = ({
             <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
             <span>Verify Guarantee</span>
           </button>
+
+          {onOpenAdminPanel && (
+            <button
+              id="nav-admin-panel-btn"
+              onClick={onOpenAdminPanel}
+              className="flex items-center gap-1.5 text-amber-400/90 hover:text-amber-200 bg-amber-950/60 hover:bg-amber-900/60 px-2.5 py-1 rounded-lg border border-amber-800/40 transition-colors text-xs font-semibold"
+              title="Store Owner Admin Panel"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+              <span>Admin Panel</span>
+            </button>
+          )}
         </nav>
 
         {/* Right Actions (Search & Cart) */}
@@ -210,6 +225,14 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <ShieldCheck className="w-4 h-4 text-amber-500" /> Verify Leather Certificate
             </button>
+            {onOpenAdminPanel && (
+              <button
+                onClick={() => { onOpenAdminPanel(); setMobileMenuOpen(false); }}
+                className="flex items-center gap-2 text-amber-300 font-bold py-1 text-xs bg-amber-950/80 px-3 py-2 rounded-lg border border-amber-800/50"
+              >
+                <Lock className="w-4 h-4 text-amber-400" /> Store Admin Orders Panel
+              </button>
+            )}
           </div>
 
           <div className="pt-3 border-t border-zinc-800 flex items-center justify-between text-xs text-amber-400/80">

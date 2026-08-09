@@ -53,6 +53,40 @@ const orderStore: OrderRecord[] = [
 
 export const apiRouter = Router();
 
+// Admin Endpoints
+apiRouter.post('/admin/login', (req, res) => {
+  const { password } = req.body;
+  if (password === 'admin123' || password === 'admin' || password === 'leathercraft' || password === '123456') {
+    return res.json({ success: true, token: 'admin-auth-token-lcpk' });
+  }
+  return res.status(401).json({ success: false, error: 'Invalid admin password' });
+});
+
+apiRouter.get('/admin/orders', (req, res) => {
+  return res.json({ success: true, orders: orderStore });
+});
+
+apiRouter.patch('/admin/orders/:id', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const order = orderStore.find((o) => o.id === id || o.trackingNumber === id);
+  if (order) {
+    if (status) order.status = status;
+    return res.json({ success: true, order });
+  }
+  return res.status(404).json({ error: 'Order not found' });
+});
+
+apiRouter.delete('/admin/orders/:id', (req, res) => {
+  const { id } = req.params;
+  const idx = orderStore.findIndex((o) => o.id === id || o.trackingNumber === id);
+  if (idx > -1) {
+    orderStore.splice(idx, 1);
+    return res.json({ success: true, message: 'Order deleted' });
+  }
+  return res.status(404).json({ error: 'Order not found' });
+});
+
 // Health check
 apiRouter.get('/health', (req, res) => {
   res.json({ status: 'ok', store: 'LeatherCraft PK' });

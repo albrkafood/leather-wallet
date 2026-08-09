@@ -1,11 +1,12 @@
 import React from 'react';
-import { Truck, ShieldCheck, PhoneCall, Mail, MapPin, Sparkles, PackageCheck, HelpCircle } from 'lucide-react';
+import { Truck, ShieldCheck, PhoneCall, Mail, MapPin, Sparkles, PackageCheck, HelpCircle, Lock } from 'lucide-react';
 
 interface FooterProps {
   onOpenTracker: () => void;
   onOpenEmbossingStudio: () => void;
   onOpenAiAdvisor: () => void;
   onOpenAuthenticity: () => void;
+  onOpenAdminPanel?: () => void;
   onSelectCategory: (cat: string) => void;
 }
 
@@ -14,6 +15,7 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenEmbossingStudio,
   onOpenAiAdvisor,
   onOpenAuthenticity,
+  onOpenAdminPanel,
   onSelectCategory
 }) => {
   return (
@@ -149,6 +151,13 @@ export const Footer: React.FC<FooterProps> = ({
                   <ShieldCheck className="w-3.5 h-3.5 text-amber-400" /> Verify Warranty Card
                 </button>
               </li>
+              {onOpenAdminPanel && (
+                <li>
+                  <button onClick={onOpenAdminPanel} className="hover:text-amber-300 flex items-center gap-1.5 text-amber-400 font-bold mt-2">
+                    <Lock className="w-3.5 h-3.5 text-amber-400" /> Store Admin Orders Panel
+                  </button>
+                </li>
+              )}
             </ul>
           </div>
         </div>
