@@ -87,7 +87,7 @@ export const WALLET_PRODUCTS: WalletProduct[] = [
       'German Bonded Thread Double-Stitched Seams',
       'Extra Currency Depth for Large PKR Notes',
       'RFID Anti-Theft Metal Fiber Interlining',
-      'Free 24K Gold Foil Monogram Hot Stamping'
+      '100% Top-Grain Italian Calfskin Leather'
     ],
     inStock: true
   },
@@ -358,7 +358,7 @@ export const WALLET_PRODUCTS: WalletProduct[] = [
     rating: 4.85,
     reviewsCount: 112,
     isBestSeller: true,
-    tagline: 'Distressed Vintage Leather with Free Custom Hot-Foil Initial Engraving',
+    tagline: 'Distressed Vintage Leather with Hand-Waxed Finish & Dual Cash Divider',
     description: 'Each Artisan Bifold tells its own unique story. Made from Crazy Horse pull-up leather that absorbs natural oils from your hands, developing character scratches and a dark lustrous tone over time.',
     leatherType: 'Vintage Crazy Horse',
     cardCapacity: '6-10 Cards + Cash Divider',
@@ -374,10 +374,10 @@ export const WALLET_PRODUCTS: WalletProduct[] = [
     ],
     features: [
       'Natural Crazy Horse Pull-Up Raw Leather finish',
-      'Free Customized 24k Gold or Silver Initials Stamping',
       'Hand-waxed edges for water resistance',
       'Dual Cash dividers fitting PKR 5,000 notes',
-      'Ideal gift for Eid, Weddings & Corporate Recognition'
+      'Ideal gift for Eid, Weddings & Corporate Recognition',
+      '100% Genuine Handcrafted Pakistani Leather'
     ],
     inStock: true
   },
@@ -408,7 +408,7 @@ export const WALLET_PRODUCTS: WalletProduct[] = [
       'Integrated Micro-SIM Card Holder & Ejector Pin slot',
       'RFID 13.56 MHz High-Frequency Shield',
       'Full Grain Smooth Nappa Leather Lining',
-      'Complimentary Custom Name Embossing'
+      'Includes Rigid Executive Gift Box & Warranty Card'
     ],
     inStock: true
   },
@@ -452,8 +452,9 @@ export const CUSTOMER_REVIEWS: CustomerReview[] = [
     rating: 5,
     date: '3 days ago',
     title: 'Incredible Gucci GG Supreme Finish & Fast TCS COD!',
-    comment: 'Ordered the Gucci GG Supreme Web Stripe Bifold with my initials H.R. stamped in Gold. Received it via TCS in 2 days in Lahore. The GG monogram canvas and interior calfskin quality are world-class!',
+    comment: 'Ordered the Gucci GG Supreme Web Stripe Bifold. Received it via TCS in 2 days in Lahore. The GG monogram canvas and interior calfskin quality are world-class!',
     productName: 'Gucci GG Supreme Web Stripe Bifold',
+    productId: 'gucci-gg-supreme-bifold',
     verifiedPurchase: true
   },
   {
@@ -465,6 +466,7 @@ export const CUSTOMER_REVIEWS: CustomerReview[] = [
     title: 'Luxury Box & Perfect Designer Look',
     comment: 'I bought the Gucci Marmont Zip-Around Wallet for my wife and the Neo Classic Long Organizer for myself. Paid Cash on Delivery in Karachi. The magnetic gift boxes and authenticity certificate cards feel like Rs. 100,000+ designer boutique packaging!',
     productName: 'Gucci Marmont Zip-Around Wallet',
+    productId: 'gucci-marmont-zip-around',
     verifiedPurchase: true
   },
   {
@@ -476,6 +478,7 @@ export const CUSTOMER_REVIEWS: CustomerReview[] = [
     title: 'Ophidia Card Case fits front pocket nicely!',
     comment: 'The Gucci Ophidia Web Slim Card Case has crisp GG canvas detail and the web stripe looks super sharp. Fits easily into my blazer pocket.',
     productName: 'Gucci Ophidia Web Slim Card Case',
+    productId: 'gucci-ophidia-cardholder',
     verifiedPurchase: true
   },
   {
@@ -487,6 +490,55 @@ export const CUSTOMER_REVIEWS: CustomerReview[] = [
     title: 'GG Embossed Leather is 10/10',
     comment: 'The heat-embossed micro-monogram on the Gucci Signature bifold is deep and clean. Smells like genuine high-grade Italian leather.',
     productName: 'Gucci Signature Monogram Embossed Bifold',
+    productId: 'gucci-gg-signature-bifold',
+    verifiedPurchase: true
+  },
+  {
+    id: 'rev-5',
+    author: 'Aamir Farooq',
+    city: 'Rawalpindi (Bahria Town)',
+    rating: 5,
+    date: '4 days ago',
+    title: 'Fits PKR 5000 notes comfortably',
+    comment: 'Most imported wallets are too small for 5000 Rupee notes. The Sovereign Italian Bifold is tailored perfectly with extra currency depth. Outstanding quality!',
+    productName: 'The Sovereign Italian Bifold',
+    productId: 'sovereign-bifold',
+    verifiedPurchase: true
+  },
+  {
+    id: 'rev-6',
+    author: 'Zainab Faisal',
+    city: 'Peshawar',
+    rating: 5,
+    date: '5 days ago',
+    title: 'Pop-Up card ejector is smooth as butter',
+    comment: 'Purchased The Obsidian Pop-Up RFID Vault for my husband. The side trigger mechanism ejects all 6 bank cards smoothly without scratching. Very premium metal build!',
+    productName: 'The Obsidian Pop-Up RFID Vault',
+    productId: 'obsidian-smart-cardholder',
+    verifiedPurchase: true
+  },
+  {
+    id: 'rev-7',
+    author: 'Kashif Mehmood',
+    city: 'Faisalabad',
+    rating: 5,
+    date: '2 weeks ago',
+    title: 'Gold Horsebit detail looks super classy',
+    comment: 'The Gucci Horsebit 1955 Bifold hardware feels solid and heavy. Has a nice snap button pocket inside for coins too.',
+    productName: 'Gucci Horsebit 1955 Italian Leather Bifold',
+    productId: 'gucci-horsebit-bifold',
+    verifiedPurchase: true
+  },
+  {
+    id: 'rev-8',
+    author: 'Tariq Jameel',
+    city: 'Sialkot',
+    rating: 5,
+    date: '1 month ago',
+    title: 'Fits passport, phone, and cash for flight travel',
+    comment: 'The Neo Classic Long Envelope Organizer held my Pakistani Passport, flight tickets, and iPhone during my Dubai trip. Unmatched convenience!',
+    productName: 'Gucci Neo Classic Long Envelope Organizer',
+    productId: 'gucci-neo-classic-executive',
     verifiedPurchase: true
   }
 ];

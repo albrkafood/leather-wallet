@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import { WalletProduct, FoilType } from '../types';
-import { PAKISTAN_CITIES } from '../data/walletsData';
+import { WalletProduct, CustomerReview } from '../types';
+import { PAKISTAN_CITIES, CUSTOMER_REVIEWS } from '../data/walletsData';
 import { 
   X, 
   ShieldCheck, 
-  Sparkles, 
   Truck, 
   Gift, 
   Check, 
   Star, 
   ShoppingBag, 
-  CreditCard,
-  Building2,
-  Info
+  MessageSquare,
+  ThumbsUp,
+  UserCheck,
+  PlusCircle
 } from 'lucide-react';
 
 interface ProductDetailModalProps {
@@ -22,7 +22,7 @@ interface ProductDetailModalProps {
     product: WalletProduct,
     selectedColor: { name: string; hex: string; image: string },
     customInitials?: string,
-    foilType?: FoilType,
+    foilType?: any,
     isGiftWrapped?: boolean
   ) => void;
 }
@@ -36,12 +36,25 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   const [selectedColor, setSelectedColor] = useState(product.colors[0]);
   const [selectedImage, setSelectedImage] = useState(selectedColor.image || product.images[0]);
-  const [customInitials, setCustomInitials] = useState('');
-  const [foilType, setFoilType] = useState<FoilType>('Gold Foil');
   const [isGiftWrapped, setIsGiftWrapped] = useState(false);
   const [selectedCity, setSelectedCity] = useState('Lahore');
-  const [activeTab, setActiveTab] = useState<'features' | 'specs' | 'packaging'>('features');
+  const [activeTab, setActiveTab] = useState<'features' | 'specs' | 'reviews' | 'packaging'>('reviews');
   const [addedSuccess, setAddedSuccess] = useState(false);
+
+  // Filter reviews matching current product, fallback to related reviews
+  const matchingReviews = CUSTOMER_REVIEWS.filter(
+    (r) => r.productId === product.id || r.productName === product.name
+  );
+  const productReviews = matchingReviews.length > 0 ? matchingReviews : CUSTOMER_REVIEWS;
+
+  const [reviewsList, setReviewsList] = useState<CustomerReview[]>(productReviews);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [newAuthor, setNewAuthor] = useState('');
+  const [newCity, setNewCity] = useState('Lahore');
+  const [newRating, setNewRating] = useState(5);
+  const [newTitle, setNewTitle] = useState('');
+  const [newComment, setNewComment] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState(false);
 
   // Delivery estimation logic
   const getDeliveryEstimate = (city: string) => {
@@ -58,8 +71,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     onAddToCart(
       product,
       selectedColor,
-      customInitials.trim().toUpperCase() || undefined,
-      foilType,
+      undefined,
+      undefined,
       isGiftWrapped
     );
     setAddedSuccess(true);
@@ -67,6 +80,34 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
       setAddedSuccess(false);
       onClose();
     }, 1200);
+  };
+
+  const handleSubmitReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAuthor.trim() || !newComment.trim()) return;
+
+    const newRev: CustomerReview = {
+      id: `custom-rev-${Date.now()}`,
+      author: newAuthor.trim(),
+      city: newCity,
+      rating: newRating,
+      date: 'Just now',
+      title: newTitle.trim() || 'Excellent Product Quality!',
+      comment: newComment.trim(),
+      productName: product.name,
+      productId: product.id,
+      verifiedPurchase: true
+    };
+
+    setReviewsList([newRev, ...reviewsList]);
+    setReviewSuccess(true);
+    setNewAuthor('');
+    setNewTitle('');
+    setNewComment('');
+    setTimeout(() => {
+      setReviewSuccess(false);
+      setShowReviewForm(false);
+    }, 2000);
   };
 
   return (
@@ -92,26 +133,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover object-center"
               />
-
-              {/* Live Embossing Overlay Preview on Leather */}
-              {customInitials.trim() && (
-                <div className="absolute bottom-6 right-6 bg-amber-950/80 backdrop-blur-md border border-amber-500/50 rounded-lg px-3 py-1.5 shadow-2xl text-center">
-                  <span className="text-[9px] uppercase tracking-widest text-amber-400/80 block">
-                    Hot Foil Monogram
-                  </span>
-                  <span
-                    className={`font-serif font-extrabold text-xl tracking-widest ${
-                      foilType === 'Gold Foil'
-                        ? 'text-amber-300 drop-shadow-[0_2px_4px_rgba(234,179,8,0.5)]'
-                        : foilType === 'Silver Foil'
-                        ? 'text-slate-200 drop-shadow-[0_2px_4px_rgba(203,213,225,0.5)]'
-                        : 'text-amber-950 opacity-90'
-                    }`}
-                  >
-                    {customInitials.toUpperCase()}
-                  </span>
-                </div>
-              )}
 
               {/* RFID Shield Badge */}
               {product.hasRfidProtection && (
@@ -151,16 +172,19 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 {product.name}
               </h2>
 
-              {/* Rating */}
-              <div className="flex items-center gap-2 text-xs text-amber-400 mt-2">
+              {/* Rating Header Clickable */}
+              <button 
+                onClick={() => setActiveTab('reviews')}
+                className="flex items-center gap-2 text-xs text-amber-400 mt-2 hover:opacity-80 transition-opacity"
+              >
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
                 <span className="font-bold text-amber-200">{product.rating}</span>
-                <span className="text-zinc-500">({product.reviewsCount} verified reviews)</span>
-              </div>
+                <span className="text-amber-400/90 underline font-medium">({product.reviewsCount} verified customer reviews)</span>
+              </button>
 
               {/* Price */}
               <div className="flex items-baseline gap-3 mt-3">
@@ -201,47 +225,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     <span>{col.name}</span>
                   </button>
                 ))}
-              </div>
-            </div>
-
-            {/* Free Custom Monogram Initial Stamping Box */}
-            <div className="bg-gradient-to-r from-amber-950/70 via-zinc-950 to-amber-950/70 p-4 rounded-xl border border-amber-700/40 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  Free Hot-Foil Monogram Initial Stamping
-                </span>
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">
-                  FREE
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <input
-                    id="monogram-initials-input"
-                    type="text"
-                    maxLength={5}
-                    placeholder="Enter Initials (e.g. A.R.)"
-                    value={customInitials}
-                    onChange={(e) => setCustomInitials(e.target.value.toUpperCase())}
-                    className="w-full bg-zinc-900 border border-amber-800/50 rounded-lg px-3 py-2 text-xs font-serif font-bold text-amber-200 placeholder-zinc-600 focus:outline-none focus:border-amber-400"
-                  />
-                  <span className="text-[10px] text-zinc-400 mt-1 block">Max 5 letters or numbers</span>
-                </div>
-
-                <div>
-                  <select
-                    id="foil-type-select"
-                    value={foilType}
-                    onChange={(e: any) => setFoilType(e.target.value)}
-                    className="w-full bg-zinc-900 border border-amber-800/50 rounded-lg px-3 py-2 text-xs text-amber-200 focus:outline-none focus:border-amber-400 font-semibold"
-                  >
-                    <option value="Gold Foil">24K Gold Foil Stamp</option>
-                    <option value="Silver Foil">Sterling Silver Foil Stamp</option>
-                    <option value="Deep Blind Deboss">Deep Blind Deboss (No Foil)</option>
-                  </select>
-                </div>
               </div>
             </div>
 
@@ -312,9 +295,16 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </p>
             </div>
 
-            {/* Tabs for Tech Specs */}
+            {/* Tabs for Tech Specs & Reviews */}
             <div className="pt-4 border-t border-zinc-800">
               <div className="flex items-center gap-4 text-xs font-semibold border-b border-zinc-800 pb-2">
+                <button
+                  onClick={() => setActiveTab('reviews')}
+                  className={`pb-1 flex items-center gap-1.5 ${activeTab === 'reviews' ? 'text-amber-400 border-b-2 border-amber-400 font-bold' : 'text-zinc-400 hover:text-amber-200'}`}
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Customer Reviews ({reviewsList.length})</span>
+                </button>
                 <button
                   onClick={() => setActiveTab('features')}
                   className={`pb-1 ${activeTab === 'features' ? 'text-amber-400 border-b-2 border-amber-400 font-bold' : 'text-zinc-400 hover:text-amber-200'}`}
@@ -335,7 +325,156 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 </button>
               </div>
 
-              <div className="pt-3 text-xs text-zinc-300 space-y-1.5 font-sans leading-relaxed">
+              <div className="pt-4 text-xs text-zinc-300 space-y-3 font-sans leading-relaxed">
+                {/* REVIEWS TAB */}
+                {activeTab === 'reviews' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between bg-zinc-950 p-3 rounded-lg border border-amber-900/30">
+                      <div>
+                        <div className="font-bold text-amber-200 flex items-center gap-2">
+                          <span className="text-lg">{product.rating}</span>
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                            ))}
+                          </div>
+                        </div>
+                        <span className="text-[11px] text-zinc-400">Based on verified customer orders in Pakistan</span>
+                      </div>
+
+                      <button
+                        onClick={() => setShowReviewForm(!showReviewForm)}
+                        className="px-3 py-1.5 rounded-lg bg-amber-950 hover:bg-amber-900 text-amber-300 font-semibold text-xs border border-amber-700/50 flex items-center gap-1.5 transition-colors"
+                      >
+                        <PlusCircle className="w-3.5 h-3.5" />
+                        <span>{showReviewForm ? 'Cancel' : 'Write a Review'}</span>
+                      </button>
+                    </div>
+
+                    {/* Write Review Form */}
+                    {showReviewForm && (
+                      <form onSubmit={handleSubmitReview} className="bg-zinc-950 p-4 rounded-xl border border-amber-700/50 space-y-3">
+                        <h4 className="font-bold text-amber-200 text-xs uppercase tracking-wider">Submit Product Feedback</h4>
+                        
+                        {reviewSuccess ? (
+                          <div className="p-3 bg-emerald-950 border border-emerald-700 text-emerald-300 text-xs rounded-lg flex items-center gap-2">
+                            <Check className="w-4 h-4 text-emerald-400" />
+                            <span>Thank you! Your verified review has been submitted and published.</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-[11px] text-zinc-400 block mb-1">Your Name *</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="e.g. Usman Chaudhry"
+                                  value={newAuthor}
+                                  onChange={(e) => setNewAuthor(e.target.value)}
+                                  className="w-full bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1.5 text-xs text-amber-200 focus:outline-none focus:border-amber-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[11px] text-zinc-400 block mb-1">City in Pakistan</label>
+                                <select
+                                  value={newCity}
+                                  onChange={(e) => setNewCity(e.target.value)}
+                                  className="w-full bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1.5 text-xs text-amber-200 focus:outline-none focus:border-amber-500"
+                                >
+                                  {PAKISTAN_CITIES.map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-[11px] text-zinc-400 block mb-1">Rating</label>
+                              <div className="flex items-center gap-2">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => setNewRating(star)}
+                                    className="p-1"
+                                  >
+                                    <Star className={`w-5 h-5 ${star <= newRating ? 'fill-amber-400 text-amber-400' : 'text-zinc-600'}`} />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-[11px] text-zinc-400 block mb-1">Review Title</label>
+                              <input
+                                type="text"
+                                placeholder="e.g. Outstanding leather quality and fast TCS delivery"
+                                value={newTitle}
+                                onChange={(e) => setNewTitle(e.target.value)}
+                                className="w-full bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1.5 text-xs text-amber-200 focus:outline-none focus:border-amber-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-[11px] text-zinc-400 block mb-1">Review Comments *</label>
+                              <textarea
+                                required
+                                rows={3}
+                                placeholder="Share details about leather feel, stitching, PKR note capacity, packaging, or COD experience..."
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                className="w-full bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1.5 text-xs text-amber-200 focus:outline-none focus:border-amber-500"
+                              />
+                            </div>
+
+                            <button
+                              type="submit"
+                              className="w-full py-2 bg-amber-600 hover:bg-amber-500 text-zinc-950 font-bold text-xs rounded uppercase tracking-wider transition-colors"
+                            >
+                              Post Verified Review
+                            </button>
+                          </>
+                        )}
+                      </form>
+                    )}
+
+                    {/* Reviews List */}
+                    <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                      {reviewsList.map((rev) => (
+                        <div key={rev.id} className="bg-zinc-950/80 p-3.5 rounded-xl border border-zinc-800/80 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-amber-200 text-xs">{rev.author}</span>
+                              <span className="text-[10px] text-zinc-500">• {rev.city}</span>
+                              {rev.verifiedPurchase && (
+                                <span className="flex items-center gap-1 text-[9px] text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800/40 font-semibold">
+                                  <UserCheck className="w-2.5 h-2.5" /> Verified Order
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-zinc-500">{rev.date}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-3 h-3 ${i < rev.rating ? 'fill-amber-400 text-amber-400' : 'text-zinc-700'}`}
+                              />
+                            ))}
+                            <span className="text-xs font-bold text-amber-100 ml-2">{rev.title}</span>
+                          </div>
+
+                          <p className="text-xs text-zinc-300 font-sans leading-relaxed pt-1">
+                            "{rev.comment}"
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {activeTab === 'features' && (
                   <ul className="list-disc list-inside space-y-1 text-zinc-300">
                     {product.features.map((f, i) => (
@@ -366,3 +505,4 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     </div>
   );
 };
+

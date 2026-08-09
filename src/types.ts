@@ -87,5 +87,6 @@ export interface CustomerReview {
   title: string;
   comment: string;
   productName: string;
+  productId?: string;
   verifiedPurchase: boolean;
 }
