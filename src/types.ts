@@ -62,6 +62,20 @@ export interface ShippingDetails {
 
 export type PaymentMethod = 'COD' | 'JazzCash' | 'EasyPaisa' | 'BankTransfer' | 'Card';
 
+export type OrderStatus = 
+  | 'Order Placed'
+  | 'Confirmed'
+  | 'Processing'
+  | 'Quality Check'
+  | 'Ready to Ship'
+  | 'Dispatched via TCS'
+  | 'Out for Delivery'
+  | 'Delivered'
+  | 'Cancelled'
+  | 'Returned';
+
+export type PaymentStatus = 'Paid' | 'Unpaid';
+
 export interface Order {
   id: string; // e.g. LCPK-98231
   trackingNumber: string;
@@ -69,14 +83,16 @@ export interface Order {
   items: CartItem[];
   shipping: ShippingDetails;
   paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
   subtotal: number;
   discount: number;
   giftWrapFee: number;
   deliveryFee: number;
   total: number;
-  status: 'Order Placed' | 'Quality Check' | 'Dispatched via TCS' | 'Out for Delivery' | 'Delivered';
+  status: OrderStatus;
   estimatedDeliveryDate: string;
   courierName: string;
+  notes?: string;
 }
 
 export interface CustomerReview {
