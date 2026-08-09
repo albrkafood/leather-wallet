@@ -1,0 +1,6 @@
+{
+  "name": "LeatherCraft PK - Luxury Leather Wallets",
+  "description": "Premier online store for handcrafted full-grain leather wallets in Pakistan. Featuring PKR pricing, Cash on Delivery, custom initial embossing, and nationwide fast delivery.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
